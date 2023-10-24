@@ -1,4 +1,31 @@
 import random
+import json
+import csv
+
+def save_data(data, save):
+    with open(save, 'w') as file:
+        json.dump(data, file)
+
+def load_data(save):
+    try:
+        with open(save, 'r') as file:
+            data = json.load(file)
+        return data
+    except FileNotFoundError:
+        return None
+
+
+def write_to_csv(data, save):
+    with open(save, 'w', newline='') as file:
+        writer = csv.writer(file)
+        for row in data:
+            writer.writerow(row)
+
+data_file = 'game_data.json'
+csv_file = 'game_results.csv'
+game_data = load_data(data_file)
+if game_data is None:
+    game_data = []
 
 characters = {
     'Пират': {
@@ -40,7 +67,7 @@ def boy():
         print(f"Ваше здоровье: {pirat['здоровье']}, Здоровье военных: {voenniy['здоровье']}\n")
     
     if pirat['здоровье'] <= 0:
-        print("Вы проиграли! Игра окончена.")
+        print("Вас сильно ранили и вы попали в плен!")
     else:
         print("Вы победили военных!")
 
@@ -58,8 +85,9 @@ def check_game_over():
     if pirat['здоровье'] <= 0:
         print("Вы проиграли! Игра окончена.")
         return True
-    elif 'сокровища' in pirat['инвентарь']:
+    if 'сокровища' in pirat['инвентарь']:
         print("Поздравляем! Вы нашли сокровища и победили военных. Игра окончена.")
+        end_game
         return True
     else:
         return False
@@ -88,21 +116,33 @@ def use_inventory_item():
         except ValueError:
             print("Введите число.")
 
+def remove_saves():
+    global game_data
+    game_data = []
+    save_data(game_data, data_file)
+    print("Все сохранения удалены.")
+
+def end_game():
+    global game_data
+    game_data.append([characters['Пират']['здоровье'], len(characters['Пират']['инвентарь'])])
+    save_data(game_data, data_file)
+    write_to_csv(game_data, csv_file)
+
 def start_game():
     print("Добро пожаловать в игру 'Сокровища пиратов'")
     print("Вы - Пират, и ваша цель - победить военных и найти сокровища.\n")
     
     while True:
-        choice = input("Выберите действие:\n1. Идти дальше\n2. Проверить инвентарь\n3. Использовать предмет из инвентаря\n4. Выйти из игры\n")
+        choice = input("Выберите действие:\n1. Идти дальше\n2. Проверить инвентарь\n3. Использовать предмет из инвентаря\n4. Выйти из игры\n5. Удаление всех сохранений.\n")
         
         if choice == '1':
-            event_id = random.randint(1, 3)
+            event_id = random.randint(1, 20)
             
-            if event_id == 2:
+            if 1 <= event_id <= 11:
                 boy()
-            elif event_id == 1:
+            elif 18 <= event_id <= 20:
                 characters['Пират']['инвентарь'].append('сокровища')
-            elif event_id == 3:
+            elif 12 <= event_id <= 17:
                 characters['Пират']['инвентарь'].append('зелье здоровья')
                 print("Вы нашли зелье здоровья!")
         elif choice == '2':
@@ -113,9 +153,12 @@ def start_game():
         elif choice == '4':
             print("Вы вышли из игры.")
             break
+        elif choice == '5':
+            remove_saves()
         
         if check_game_over():
             break
 
 if __name__ == "__main__":
     start_game()
+    end_game()
